@@ -1,8 +1,14 @@
 #!/usr/bin/env node
 import open, { apps } from 'open';
 import dotenv from 'dotenv';
-import Database from 'better-sqlite3';
 import fs from 'fs';
+import {
+    addFavorite,
+    deleteFavorite,
+    getFavorite,
+    replaceFavorite,
+    getFavorites,
+} from './lib/sdk.js';
 
 dotenv.config();
 
@@ -10,38 +16,7 @@ const args = process.argv.slice(2);
 const command = args[0];
 const favorite = args[1];
 const url = args[2];
-
-let db;
-const dbPath = 'favorites.db';
-
-function init() {
-    console.log('initializing database...');
-    db = new Database(dbPath);
-
-    const createTable = `
-        CREATE TABLE IF NOT EXISTS favorites (
-            id INTEGER PRIMARY KEY,
-            name TEXT NOT NULL,
-            url TEXT NOT NULL
-        )
-    `;
-
-    db.exec(createTable);
-
-    const data = [
-        { name: 'goog', url: 'https://google.com' },
-        { name: 'social', url: 'https://instagram.com' },
-        { name: 'news', url: 'https://yahoo.com' },
-    ];
-
-    const insertData = db.prepare(
-        'INSERT INTO favorites (name, url) VALUES (?, ?)'
-    );
-
-    data.forEach((favorite) => {
-        insertData.run(favorite.name, favorite.url);
-    });
-}
+const favorites = await getFavorites();
 
 function checkBrowser() {
     const browser = process.env?.BROWSER?.toLocaleLowerCase();
@@ -69,16 +44,15 @@ function displayMenu() {
     console.log('rm <favorite>          : remove a saved favorite.');
 }
 
-function openFavorite(favorite) {
-    const row = db
-        .prepare('SELECT * FROM favorites WHERE name = ?')
-        .get(favorite);
+function openFavorite(name) {
+    const favToOpen = favorites.find((fav) => fav.name === name);
 
-    if (!row) {
-        console.log('Favorite not found.');
+    if (!favToOpen) {
+        console.log(`Favorite ${name} does not exist.`);
         process.exit(1);
     }
-    const url = row.url;
+
+    const url = favToOpen.url;
     console.log('opening', url);
     const appName = checkBrowser();
 
@@ -89,69 +63,35 @@ function openFavorite(favorite) {
     }
 }
 
-function add(favorite, url) {
-    db.prepare('INSERT INTO favorites (name, url) VALUES (?, ?)').run(
-        favorite,
-        url
-    );
+const add = async (name, url) => {
+    const id = await addFavorite(name, url);
     console.log('adding', favorite, url);
-}
+    if (!id) {
+        console.log(`Failed to add favorite ${name}.`);
+        process.exit(1);
+    }
+};
 
-function rm(favorite) {
-    db.prepare('DELETE FROM favorites WHERE name = ?').run(favorite);
-    console.log('removing', favorite);
-}
+const rm = async (name) => {
+    const favToDelete = favorites.find((fav) => fav.name === name);
 
-function ls() {
-    const favorites = db.prepare('SELECT * FROM favorites').all();
+    if (!favToDelete) {
+        console.log(`Favorite ${name} does not exist.`);
+        process.exit(1);
+    }
+
+    await deleteFavorite(favToDelete.id);
+    console.log('removing', name);
+};
+
+const ls = async () => {
     console.log('All favorites:');
     favorites.forEach((favorite) => {
         console.log(`${favorite.name}: ${favorite.url}`);
     });
-}
-
-if (!fs.existsSync(dbPath)) {
-    init();
-} else {
-    db = new Database(dbPath);
-}
+};
 
 const argCount = args.length;
-
-/*
-if (argCount === 0 || !['ls', 'open', 'rm', 'add'].includes(command)) {
-    displayMenu();
-    process.exit(1);
-}
-
-switch (command) {
-    case 'ls':
-        ls();
-        break;
-    case 'open':
-        if (argCount < 2) {
-            displayMenu();
-            process.exit(1);
-        }
-        openFavorite(favorite);
-        break;
-    case 'add':
-        if (argCount < 3) {
-            displayMenu();
-            process.exit(1);
-        }
-        add(favorite, url);
-        break;
-    case 'rm':
-        if (argCount < 2) {
-            displayMenu();
-            process.exit(1);
-        }
-        rm(favorite);
-        break;
-}
-
-*/
 
 const commands = {
     ls: { f: ls, argCount: 1 },
@@ -169,4 +109,4 @@ if (
     process.exit(1);
 }
 
-commands[command].f(favorite, url);
+await commands[command].f(favorite, url);
