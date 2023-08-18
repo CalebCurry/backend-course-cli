@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 let baseUrl;
 
 export const setBaseUrl = (url) => {

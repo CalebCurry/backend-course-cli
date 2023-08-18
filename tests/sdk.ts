@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
     addFavorite,
     deleteFavorite,

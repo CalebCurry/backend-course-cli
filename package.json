@@ -3,11 +3,15 @@
     "version": "1.1.1",
     "description": "Easily launch your favorite websites.",
     "files": [
-        "src/main.js"
+        "dist"
     ],
-    "main": "index.js",
+    "main": "dist/app.js",
     "scripts": {
-        "start": "node src/main.js"
+        "watch": "tsc --watch",
+        "build": "tsc --project tsconfig-build.json",
+        "start": "node dist/app.js",
+        "dev": "tsc && node dist/src/app.js",
+        "test": "tsc && node dist/tests/sdk.js"
     },
     "keywords": [],
     "author": "",

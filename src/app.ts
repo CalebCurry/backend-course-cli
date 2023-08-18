@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-nocheck
 import open, { apps } from 'open';
 import dotenv from 'dotenv';
 import fs from 'fs';
