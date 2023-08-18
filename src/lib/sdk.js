@@ -1,4 +1,8 @@
-const baseUrl = 'http://localhost:3000';
+let baseUrl;
+
+export const setBaseUrl = (url) => {
+    baseUrl = url;
+};
 
 export const getFavorites = async () => {
     const response = await fetch(`${baseUrl}/favorites`);

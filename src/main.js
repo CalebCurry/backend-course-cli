@@ -2,13 +2,10 @@
 import open, { apps } from 'open';
 import dotenv from 'dotenv';
 import fs from 'fs';
-import {
-    addFavorite,
-    deleteFavorite,
-    getFavorite,
-    replaceFavorite,
-    getFavorites,
-} from './lib/sdk.js';
+
+import * as SDK from './lib/sdk.js';
+
+SDK.setBaseUrl('http://localhost:3000');
 
 dotenv.config();
 
@@ -16,7 +13,7 @@ const args = process.argv.slice(2);
 const command = args[0];
 const favorite = args[1];
 const url = args[2];
-const favorites = await getFavorites();
+const favorites = await SDK.getFavorites();
 
 function checkBrowser() {
     const browser = process.env?.BROWSER?.toLocaleLowerCase();
@@ -64,7 +61,7 @@ function openFavorite(name) {
 }
 
 const add = async (name, url) => {
-    const id = await addFavorite(name, url);
+    const id = await SDK.addFavorite(name, url);
     console.log('adding', favorite, url);
     if (!id) {
         console.log(`Failed to add favorite ${name}.`);
@@ -80,7 +77,7 @@ const rm = async (name) => {
         process.exit(1);
     }
 
-    await deleteFavorite(favToDelete.id);
+    await SDK.deleteFavorite(favToDelete.id);
     console.log('removing', name);
 };
 
