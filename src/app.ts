@@ -1,9 +1,7 @@
 #!/usr/bin/env node
-// @ts-nocheck
 import open, { apps } from 'open';
 import dotenv from 'dotenv';
 import fs from 'fs';
-
 import * as SDK from './lib/sdk.js';
 
 SDK.setBaseUrl('http://localhost:3000');
@@ -14,11 +12,18 @@ const args = process.argv.slice(2);
 const command = args[0];
 const favorite = args[1];
 const url = args[2];
-const favorites = await SDK.getFavorites();
+
+interface Favorite {
+    id: number;
+    name: string;
+    url: string;
+}
+
+const favorites: Favorite[] = await SDK.getFavorites();
 
 function checkBrowser() {
     const browser = process.env?.BROWSER?.toLocaleLowerCase();
-    let appName = browser;
+    let appName: string | readonly string[] | undefined = browser;
     //console.log(appName);
 
     switch (browser) {
@@ -42,7 +47,7 @@ function displayMenu() {
     console.log('rm <favorite>          : remove a saved favorite.');
 }
 
-function openFavorite(name) {
+function openFavorite(name: string) {
     const favToOpen = favorites.find((fav) => fav.name === name);
 
     if (!favToOpen) {
@@ -61,7 +66,7 @@ function openFavorite(name) {
     }
 }
 
-const add = async (name, url) => {
+const add = async (name: string, url: string) => {
     const id = await SDK.addFavorite(name, url);
     console.log('adding', favorite, url);
     if (!id) {
@@ -70,8 +75,8 @@ const add = async (name, url) => {
     }
 };
 
-const rm = async (name) => {
-    const favToDelete = favorites.find((fav) => fav.name === name);
+const rm = async (name: string) => {
+    const favToDelete = favorites.find((fav: Favorite) => fav.name === name);
 
     if (!favToDelete) {
         console.log(`Favorite ${name} does not exist.`);
@@ -91,12 +96,21 @@ const ls = async () => {
 
 const argCount = args.length;
 
+interface Command {
+    f: Function;
+    argCount: number;
+}
+
+interface Commands {
+    [key: string]: Command;
+}
+
 const commands = {
     ls: { f: ls, argCount: 1 },
     open: { f: openFavorite, argCount: 2 },
     rm: { f: rm, argCount: 2 },
     add: { f: add, argCount: 3 },
-};
+} as Commands;
 
 if (
     argCount === 0 ||
